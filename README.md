@@ -1,4 +1,4 @@
-# economic-efficiency-of-subsidy-design
+# economic_efficiency_of_subsidy_design
 
 In this project, I perform analytic steps for a project that seeks to analyze the economic efficiency of subsidy design on the health insurance markets that were created in the US under the 2010 Affordable Care Act (ACA). (The subsidy is formally known as Advanced Premium Tax Credit.) I use the data from the United States Census Bureau’s Public Use Microdata Samples (PUMS) of the American Community Survey (ACS). (I attained both the “Population Records” and “Housing Unit Records.”)
 
