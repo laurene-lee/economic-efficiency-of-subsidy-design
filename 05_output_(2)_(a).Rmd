@@ -1,0 +1,22 @@
+
+```{r subsidy_age, echo = TRUE, message = FALSE, warning = FALSE}
+
+# Binned scatterplot
+ggplot(data = df_ACA, aes(x = Age, y = MemSubsidy)) +
+  stat_summary_bin(fun = "mean", bins = 30, geom = "point", color = "blue") +
+  geom_smooth(method = "lm", color = "red") +
+  labs(title = "Binned Scatterplot of Individual Subsidy vs Age",
+       x = "Age",
+       y = "Average Individual-Level Subsidy") +
+  theme_minimal() +
+  theme(
+    # Adjust space between x-axis label and x-axis ticks
+    axis.title.x = element_text(margin = margin(t = 10, r = 0, b = 0, l = 0)),
+    # Adjust space between y-axis label and y-axis ticks
+    axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l = 0))  
+  )
+
+# Regression
+lm_AgeSubsidy <- lm(MemSubsidy ~ Age, data = df_ACA)
+stargazer(lm_AgeSubsidy, type = "text") 
+```

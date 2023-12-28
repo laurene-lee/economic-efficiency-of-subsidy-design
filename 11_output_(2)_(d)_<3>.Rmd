@@ -1,0 +1,31 @@
+```{r age, echo = TRUE, message = FALSE, warning = FALSE}
+
+# 3. Age
+
+# (1) Top fam summary stats
+Top_Age_Stats <- TopFam %>%
+  summarise(
+    Family = "TopFam", # Add column indicating family type
+    AvgAge = mean(Age, na.rm = TRUE),
+    MedAge = median(Age, na.rm = TRUE),
+    MinAge = min(Age, na.rm = TRUE),    
+    MaxAge = max(Age, na.rm = TRUE), 
+  )
+
+# (2) Bottom fam summary stats
+Bottom_Age_Stats <- BottomFam %>%
+  summarise(
+    Family = "BottomFam", # Add column indicating family type
+    AvgAge = mean(Age, na.rm = TRUE),
+    MedAge = median(Age, na.rm = TRUE),
+    MinAge = min(Age, na.rm = TRUE),    
+    MaxAge = max(Age, na.rm = TRUE), 
+  )
+
+# (3) Merge TopFam & BottomFam stats
+Age_Stats <- rbind(Top_Age_Stats, Bottom_Age_Stats)
+
+# Print the table as a Markdown table
+knitr::kable(Age_Stats, format = "markdown")
+
+```

@@ -1,0 +1,135 @@
+
+```{r sex_race, echo = TRUE, message = FALSE, warning = FALSE}
+
+# Defining function for summary stats
+summarise_stats <- function(data, variable) {
+  data %>% 
+    summarise(
+      Mean = mean({{ variable }}, na.rm = TRUE),
+      Median = median({{ variable }}, na.rm = TRUE),
+      SD = sd({{ variable }}, na.rm = TRUE),
+      Min = min({{ variable }}, na.rm = TRUE),
+      Max = max({{ variable }}, na.rm = TRUE),
+      IQR = IQR({{ variable }}, na.rm = TRUE), # Interquartile range
+      Count = n()
+    )
+}
+
+# Convert Female and White to factors for better labeling in plot
+df_ACA <- df_ACA %>%
+  mutate(
+    Female = factor(Female, labels = c("Male", "Female")),
+    White = factor(White, labels = c("Non-White", "White"))
+  )
+
+# 1. By sex
+
+# Summary statistics by sex
+Sex_Stats <- df_ACA %>% 
+  group_by(Female) %>% 
+  summarise_stats(MemSubsidy) %>%
+  rename("Sex" = Female, S.D. = SD, Min. = Min, Max. = Max)
+
+# Print the table as a Markdown table
+knitr::kable(Sex_Stats, format = "markdown")
+
+# Box + violin plots by sex
+ggplot(df_ACA, aes(x = Female, y = MemSubsidy, fill = Female)) +
+  geom_violin(trim = FALSE) +
+  geom_boxplot(width = 0.2, fill = "white",
+               outlier.shape = 19,      # Customizing outlier features
+               outlier.size = 3,        
+               outlier.colour = "red",  
+               outlier.alpha = 0.5) +   # Semi-transparency
+  labs(title = "Distribution of Individual Subsidy by Sex",
+       x = "Sex",
+       y = "Individual Subsidy") +
+  # Give each combination of sex & race diff colors
+  scale_fill_manual(values = c("Male" = "#8da0cb", "Female" = "#fc8d62")) + 
+  theme_minimal() +
+  theme(legend.position = "bottom") +
+  theme(
+    # Adjust space between x-axis label and x-axis ticks
+    axis.title.x = element_text(margin = margin(t = 10, r = 0, b = 0, l = 0)),
+    # Adjust space between y-axis label and y-axis ticks
+    axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l = 0))  
+  )
+
+# 2. By race
+
+# Summary statistics by race
+Race_Stats <- df_ACA %>% 
+  group_by(White) %>% 
+  summarise_stats(MemSubsidy) %>%
+  rename("Race" = White, S.D. = SD, Min. = Min, Max. = Max)
+
+# Print the table as a Markdown table
+knitr::kable(Race_Stats, format = "markdown")
+
+# Box + violin plots by race
+ggplot(df_ACA, aes(x = White, y = MemSubsidy, fill = White)) +
+  geom_violin(trim = FALSE) +
+  geom_boxplot(width = 0.2, fill = "white",
+               outlier.shape = 19,      # Customizing outlier features
+               outlier.size = 3,        
+               outlier.colour = "red",  
+               outlier.alpha = 0.5) +   # Semi-transparency
+  labs(title = "Distribution of Individual Subsidy by Race",
+       x = "Race",
+       y = "Individual Subsidy") +
+  scale_fill_manual(values = c("Non-White" = "#c5e0dc", "White" = "#fadadd")) + # Give each combination of sex & race diff colors
+  theme_minimal() +
+  theme(legend.position = "bottom") +
+  theme(
+    # Adjust space between x-axis label and x-axis ticks
+    axis.title.x = element_text(margin = margin(t = 10, r = 0, b = 0, l = 0)),
+    # Adjust space between y-axis label and y-axis ticks
+    axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l = 0))  
+  )
+
+# 3. Additional analysis (By sex & race)
+
+# Creating interaction terms for each combination of sex & race
+df_ACA <- df_ACA %>%
+  mutate(
+    SexRace = factor( 
+      # interaction term for sex & race
+      interaction(Female, White, drop = TRUE),
+      # Ensuring SexRace is a factor w/ desired level orders & labels
+      levels = c("Male.White", "Male.Non-White", "Female.White", "Female.Non-White"),
+      labels = c("White Male", "Non-White Male", "White Female", "Non-White Female")
+    )
+  ) %>%
+  arrange(SexRace) # maybe drop this line
+
+# Summary stats
+SexRace_Stats <- df_ACA %>%
+  group_by(SexRace) %>%
+  summarise_stats(MemSubsidy) %>%
+  rename("Demographic Group" = SexRace, S.D. = SD, Min. = Min, Max. = Max)
+
+# Print the table as a Markdown table
+knitr::kable(SexRace_Stats, format = "markdown")
+
+# Box + violin plot
+ggplot(df_ACA, aes(x = SexRace, y = MemSubsidy, fill = SexRace)) +
+  geom_violin(trim = FALSE) +
+  geom_boxplot(width = 0.2, fill = "white",
+               outlier.shape = 19,      # Customizing outlier features
+               outlier.size = 3,        
+               outlier.colour = "blue",  
+               outlier.alpha = 0.5) +   
+  labs(title = "Distribution of Individual Subsidy by Sex and Race",
+       x = "Demographic Group",
+       y = "Individual Subsidy") +
+  scale_fill_brewer(palette = "Pastel1") + # Give each combination of sex & race diff colors
+  theme_minimal() +
+  theme(legend.position = "bottom") +
+  theme(
+    # Adjust space between x-axis label and x-axis ticks
+    axis.title.x = element_text(margin = margin(t = 10, r = 0, b = 0, l = 0)),
+    # Adjust space between y-axis label and y-axis ticks
+    axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l = 0))  
+  )
+
+```

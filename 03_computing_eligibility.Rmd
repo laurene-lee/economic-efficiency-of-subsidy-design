@@ -1,0 +1,102 @@
+
+```{r subsidy_eligibility, echo = TRUE, message = FALSE, warning = FALSE, results = "hide"}
+
+# 1. Federal Poverty Line (FPL)
+FPL_Values <- c('1' = 11880, '2' = 16020, '3' = 20160, '4' = 24300, '5' = 28440, '6' = 32580)
+
+# 2. Computing Household Income as a Percentage of FPL
+df_ACA <- df_ACA %>%
+  mutate(FPL = FPL_Values[as.character(TaxFamCt)], # Create FPL variable
+         FPL_times4 = FPL * 4, # Multiply FPL by 4
+         NIncPov = ifelse(HouInc > FPL_times4,
+                          401, # If household income > 4*FPL, give 401
+                          floor((HouInc / FPL) * 100))) # Steps for if household inc <= 4*FPL
+
+# 3. Importing "Table 2. Applicable Figure" from p. 9 of IRS Document
+# (For this step, I used Adobe to convert the pdf table into csv format)
+AppFig <- read.csv("AppFig.csv", header = FALSE) %>%
+  select(V2, V4, V6, V7, V9, V10, V12, V13) %>%
+  na.omit() 
+
+# Combine columns vertically
+v2_combined <- unlist(AppFig[c("V2", "V6", "V9", "V12")], use.names = FALSE)
+v4_combined <- unlist(AppFig[c("V4", "V7", "V10", "V13")], use.names = FALSE)
+
+# Create new data frame from combined columns
+AppFig <- data.frame(NIncPov = v2_combined, AppFig = v4_combined)
+
+# Add in missing values
+new_values <- data.frame(NIncPov = c(258, 259, 260), 
+                         AppFig = c(0.0845, 0.0848, 0.0851))
+AppFig <- AppFig %>%
+  add_row(new_values, .before = 121)
+
+# 4. Merge "df_ACA" with "AppFig" & Assign "AppFig" values for each observation
+df_ACA <- left_join(df_ACA, AppFig, by = "NIncPov") %>%
+  mutate(AppFig = case_when(
+    # if NIncPov is NA, use current value of AppFig (which is "NA")
+    is.na(NIncPov) ~ AppFig, 
+    # If NIncPov < 133, use 0.0204
+    NIncPov < 133 ~ 0.0204,
+    # If 300 <= NIncPov <= 400, use 0.0969
+    NIncPov >= 300 & NIncPov <= 400 ~ 0.0969, 
+    # For all other cases, use current value of AppFig (which is "NA") 
+    TRUE ~ AppFig)) 
+
+# 5. Load second-lowest Silver plan premium (SLSP) data
+SLSP <- read_excel("slsp_premiums_2017.xls") %>%
+  select(-year) %>%
+  rename(Age = age)
+
+# 6. Compute subsidy (Advanced Premium Tax Credit)
+df_ACA <- df_ACA %>%
+  mutate(Age = as.numeric(Age),
+         # Annual contribution amount. Round to nearest whole dollar
+         CAP = round(HouInc * AppFig, digits = 0)) %>% 
+  left_join(SLSP, by = "Age") # Merge SLSP data with df_ACA
+
+SUM_SLSP <- df_ACA %>%
+  group_by(ID, HouInc) %>% 
+  summarise(Sum_SLSP = sum(annual_2sls_premium_USD)) %>% # Sum of SLSP of each coverage family
+  ungroup() %>%
+  select(-HouInc)
+
+df_ACA <- df_ACA %>%
+  left_join(SUM_SLSP, by = "ID") %>% # Merge SUM_SLSP data with df_ACA
+  mutate(
+    # Family-level subsidy & replace negative values w/ zero
+    FamSubsidy = pmax(Sum_SLSP - CAP, 0), 
+    # Average subsidy level per coverage-family member
+    MemSubsidy = FamSubsidy/CovFamCt) 
+
+```
+
+I computed the amount of health insurance subsidies, formally known as Advanced Pre- mium Tax Credit (APTC), that each coverage family in the data would be eligible to receive (APTC is determined at the family level). I computed both family-level subsidy and average subsidy level per coverage-family member based on the subsidy rules outlined in the 2017 IRS Form 8962.
+
+The steps taken to compute the subsidies are as follows:
+
+1. I identified the FPL for individuals in NH from p. 6 of the 2017 IRS Form 8962.
+     * The FPL vary depending on the state of residence and tax family size. I imported the FPL for NH and tax family sizes ranging from 1 to 6 to R from Form 8962.
+     
+2. I computed household income as a percentage of the FPL for the individuals in the dataset based on the steps outlined in Form 8962, and created a variable (“NIncPov”) representing this. To do so, I compared the household income with the value earned through multiplying the applicable FPL by 4. The specific steps taken are:
+     * If household income > F P L × 4, then I recorded 401 for “NIncPov.”
+         * _The individuals that have 401 for “NIncPov” are not eligible for subsidies._
+     * If If household income < F P L × 4, then I (1) divided the household income by the applicable FPL based on the tax family size, (2) multiplied this number by 100 (to express as a percentage), (3) dropped any numbers after the decimal point, and (4) recorded the final output for “NIncPov.”
+     * _(Note: As mentioned in Analytic Step 1, the raw PUMS file does come with a variable (“POVPIP”) that codes income-to-poverty ratio. However, I created my own variable (“NIncPov”) following the procedures explained above to ensure that this specific variable representing household income as a percentage of the FPL is computed in strict accordance with the steps outlined in the 2017 IRS Form 8962. Another related reason for creating my own variable was, after creating the “NIncPov” variable, I compared the values of “NIncPov” with the values of “POVPIP” in R to see whether they match, and noticed that they do not. From this, I assumed that a different methodology may have been used to compute the “POVPIP” variable.)_
+
+3. I identified the “Applicable Figure” for each respective value of “household income as a percentage of the FPL” (“NIncPov”) as computed in the step above.
+     * To do so, I imported “Table 2. Applicable Figure,” which lists the values of “Applicable Figure” for different levels of “NIncPov,” from Form 8962 into R.
+         * I used Adobe to convert the table into a csv format for importing it into R. Once the converted table was imported into R, I carried out a few data manipulation procedures to ensure the table values are imported as they are in Form 8962.
+         * _(Note: The “Applicable Figure” is only available to those whose values of “NIncPov” is below 401 as those that have “NIncPov” values of 401 are not eligible for subsidies.)_
+         
+4. I computed the annual contribution amount of coverage families (which is equivalent to “the maximum amount that a coverage family ‘should’ pay for insurance”), labeled “CAP,” through multiplying their household income by their “Applicable Figure.”
+     * I rounded the “CAP” values to the nearest whole dollar amount per the instruc- tions on Form 8962.
+     
+5. I computed the annual applicable second-lowest cost Silver plan premium (SLCSP) for the coverage families, which I labeled “Sum SLSP”. To do so, I summed the amount of SLCSP for each individual in the coverage family.
+     * The amount of SLCSP differ for each individual depending on their age. I used the attached Excel file with the SLCSP information to identify these age-specific values of SLCSP. (I imported the Excel file into R and merged it with the original dataset to compute the sum of SLCSP for the respective coverage families based on the family members’ ages.)
+     
+6. I computed the subsidy, or the “annual maximum premium assistance,” to use the lan- guage from Form 8962, for each coverage family by subtracting the annual contribution amount (“CAP”) from the annual applicable SLCSP premium (“Sum SLSP”).
+     * The computed subsidy is at the family-level. I labeled them “FamSubsidy.”
+     * To find the average subsidy level per coverage-family member, I divided the value of “FamSubsidy” by the number of members in the respective coverage family. I labeled them “MemSubsidy.”
+     * _(Note: If the resulting value from the subtraction was zero or less, I replaced it with zero per the instructions in Form 8962.)_
+   

@@ -1,0 +1,14 @@
+
+```{r top_bottom, echo = TRUE, message = FALSE, warning = FALSE}
+
+# 0. Compute thresholds & subset families in highest and lowest 10% subsidy levels
+
+# Calculate thresholds for top and bottom 10% of subsidies
+Top_10 <- quantile(df_ACA$FamSubsidy, 0.9, na.rm = TRUE) # Top 10%
+Bottom_10 <- quantile(df_ACA$FamSubsidy, 0.1, na.rm = TRUE) # Bottom 10%
+
+# Subset for families w/ highest & lowest 10% subsidy levels
+TopFam <- df_ACA %>% filter(FamSubsidy >= Top_10) # Top 10%
+BottomFam <- df_ACA %>% filter(FamSubsidy <= Bottom_10) # Bottom 10%
+
+```

@@ -1,0 +1,54 @@
+```{r education, echo = TRUE, message = FALSE, warning = FALSE}
+
+# 6. Other characteristics (1) - Educational attainment
+
+# Function for summarizing educational attainment data
+edu_stats <- function(df, edu_col_name) {
+  # Define all educational attainment groupings
+  edu_levels <- c("Less than High School",
+                  "Some High School",
+                  "High School Graduate",
+                  "Some College",
+                  "Bachelor and higher",
+                  "NA") 
+  
+  total <- nrow(df) # Calculate total 
+  
+  # Convert the education column to a factor with predefined levels
+  df <- df %>%
+    mutate(
+      Edu_Group = case_when(
+        is.na(!!sym(edu_col_name)) ~ 'NA',  # Handle NA values first
+        !!sym(edu_col_name) <= 11 ~ 'Less than High School',
+        !!sym(edu_col_name) <= 15 ~ 'Some High School',
+        !!sym(edu_col_name) <= 17 ~ 'High School Graduate',
+        !!sym(edu_col_name) <= 20 ~ 'Some College',
+        TRUE ~ 'Bachelor and higher'
+      ),
+      Edu_Group = factor(Edu_Group, levels = edu_levels)
+    )
+  
+  # Summarise and ensure all education levels are included
+  df <- df %>%
+    group_by(Edu_Group) %>%
+    summarise(Count = n(), groups = "drop") %>%
+    # Add missing education levels with zero count
+    complete(Edu_Group = edu_levels, fill = list(Count = 0)) %>%  
+    mutate(Count_Prop = paste(Count, "(", sprintf("%.2f%%", Count / total * 100), ")", sep = "")) %>%
+    # Arrange by order of employment levels
+    arrange(match(Edu_Group, edu_levels)) %>%  
+    # Add summary row
+    bind_rows(summarise(df, Edu_Group = "Total",
+                        Count = total,
+                        Count_Prop = paste(total, "(100%)"))) %>%
+    select(Edu_Group, Count_Prop)
+}
+
+# Apply above function to TopFam & BottomFam data to summmarise educational attainment info
+TopFam_Edu <- edu_stats(TopFam, "Edu")
+knitr::kable(TopFam_Edu, format = "markdown") # Convert table as Markdown table
+
+BottomFam_Edu <- edu_stats(BottomFam, "Edu")
+knitr::kable(BottomFam_Edu, format = "markdown") # Convert table as Markdown table
+
+```

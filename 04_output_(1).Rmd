@@ -1,0 +1,86 @@
+
+```{r summary stats, echo = TRUE, message = FALSE, warning = FALSE}
+
+options(scipen=999, digits=2) # Turn off scientific notation
+
+# 1. Individual level summary stats
+Indi_Stats <- df_ACA %>%
+  summarise(
+    across(c(Age,HouMemInc, MemSubsidy), # Summary stats for listed variables
+           list(
+             Mean = ~ mean(.x, na.rm = TRUE),
+             SD = ~ sd(.x, na.rm = TRUE),
+             P10 = ~ quantile(.x, 0.1, na.rm = TRUE),
+             P90 = ~ quantile(.x, 0.9, na.rm = TRUE),
+             N = ~ sum(!is.na(.x))
+           ),
+           .names = "{.col}_{.fn}"
+    ),
+    across(c(Female, White), # Mean of Female, White, and CovFamCt variables
+           list(
+             Mean = ~ mean(.x, na.rm = TRUE),
+             N = ~ sum(!is.na(.x))
+           ),
+           .names = "{.col}_{.fn}"
+    )
+  ) %>%
+  pivot_longer( # Pivot steps to turn the statistics into table format
+    cols = everything(), 
+    names_to = c("variable", "statistic"), 
+    names_pattern = "(.*)_(.*)"
+  ) %>%
+  pivot_wider(
+    names_from = statistic, 
+    values_from = value,
+  )
+
+# 2. Family level summary stats 
+Fam_Stats <- df_ACA %>%
+  group_by(ID, HouInc) %>% # Add HouInc???
+  slice(1) %>% 
+  ungroup() %>%
+  summarise(
+    across(c(HouInc, FamSubsidy, CovFamCt), # Summary stats for listed variables
+           list(
+             Mean = ~ mean(.x, na.rm = TRUE),
+             SD = ~ sd(.x, na.rm = TRUE),
+             P10 = ~ quantile(.x, 0.1, na.rm = TRUE),
+             P90 = ~ quantile(.x, 0.9, na.rm = TRUE),
+             N = ~ sum(!is.na(.x))
+           ),
+           .names = "{.col}_{.fn}"
+    )
+  ) %>%
+  pivot_longer( # Pivot steps to turn the statistics into table format
+    cols = everything(), 
+    names_to = c("variable", "statistic"), 
+    names_pattern = "(.*)_(.*)"
+  ) %>%
+  pivot_wider(
+    names_from = statistic, 
+    values_from = value,
+  )
+
+# 3. Merge individual & family level summary stats
+Merged_Stats <- rbind(Indi_Stats, Fam_Stats) %>%
+  mutate(variable = factor(variable, # Rearrange order of variables in table
+                           levels = c("Age", "Female", "White", "HouMemInc", "HouInc", 
+                                      "MemSubsidy", "FamSubsidy", "CovFamCt"))) %>%
+  arrange(variable) %>%
+  mutate(variable = recode(variable, # Rename variables
+                           Age = "Age (Years)",
+                           Female = "Gender (Female)",
+                           White = "Race (White)",
+                           HouMemInc = "Individual Income",
+                           HouInc = "Household Income",
+                           MemSubsidy = "Member-Level Subsidy",
+                           FamSubsidy = "Family-Level Subsidy",
+                           CovFamCt = "Coverage Family Size")) %>%
+  rename(Variable = variable, S.D. = SD, "10th Percentile" = P10, "90th Percentile" = P90, Count = N) 
+
+# Print the table as a Markdown table
+knitr::kable(Merged_Stats, format = "markdown")
+
+```
+
+I present summary statistics about individuals and families in the data. The table reports the mean, standard deviation (S.D.), and 10th and 90th percentiles of demographics (age, sex, race, income) and subsidy levels at the family and individual levels. Specifically, the statistics regarding age, sex, race, individual income, and family member-level subsidy are presented at the individual level, and the statistics regarding household income, and family-level subsidy are presented at the family level. The number of individuals and fam- ilies that the summary statistics are based on is also reported in the “Count” column of the table. The table also shows the average coverage family size.

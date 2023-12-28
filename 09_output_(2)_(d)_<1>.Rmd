@@ -1,0 +1,46 @@
+```{r size, echo = TRUE, message = FALSE, warning = FALSE}
+
+# 1. Size of families
+
+# TopFam Size
+TopFam_Size <- TopFam %>%
+  group_by(ID, HouInc) %>%
+  summarise(
+    Family_Size = first(CovFamCt), # Take family sizes of each coverage family
+  ) %>%
+  ungroup() %>%
+  select(-HouInc)
+
+# BottomFam Size
+BottomFam_Size <- BottomFam %>%
+  group_by(ID, HouInc) %>%
+  summarise(
+    Family_Size = first(CovFamCt), # Take family sizes of each coverage family
+  ) %>%
+  ungroup() %>%
+  select(-HouInc)
+
+# Summary stats function for family sizes
+summarise_stats_2 <- function(df, size_column, group_name) {
+  df %>%
+    summarise(
+      Group = group_name,
+      Average_Size = mean({{ size_column }}, na.rm = TRUE),
+      Median_Size = median({{ size_column }}, na.rm = TRUE),
+      Min_Size = min({{ size_column }}, na.rm = TRUE),
+      Max_Size = max({{ size_column }}, na.rm = TRUE),
+      Std_Deviation = sd({{ size_column }}, na.rm = TRUE)
+    ) %>%
+    mutate(across(c(Average_Size, Median_Size, Min_Size, Max_Size, Std_Deviation), ~round(.x, 1)))
+}
+
+# Calculate summary stats for each group and add a group identifier
+TopFam_Size_Stats <- summarise_stats_2(TopFam_Size, Family_Size, "TopFam")
+BottomFam_Size_Stats <- summarise_stats_2(BottomFam_Size, Family_Size, "BottomFam")
+
+Size_Stats <- bind_rows(TopFam_Size_Stats, BottomFam_Size_Stats)
+
+# Print the table as a Markdown table
+knitr::kable(Size_Stats, format = "markdown")
+
+```

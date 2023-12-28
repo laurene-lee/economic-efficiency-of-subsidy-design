@@ -1,0 +1,77 @@
+```{r model, echo = TRUE, message = FALSE, warning = FALSE}
+
+# (e) Estimate a regression model that would allow you to describe how subsidies 
+#     depend on individual and family level characteristics.
+
+# 1. Clean and prepare data
+# Add family type, education attainment, and employment status variables & converint to factors
+
+# (1) Get family types for IDs in df_ACA
+df_ACA_All <- df_ACA %>%
+  select(ID) %>%
+  left_join(df_ACA_Tax, by = "ID") %>% # Merge with larger data to get family type info at "general" level
+  group_by(ID) %>% 
+  summarise(
+    Fam_Type = family_type(first(HouFam_Type), first(Children)),
+    .groups = "drop"
+  )
+
+df_ACA <- df_ACA %>%
+  left_join(df_ACA_All, by = "ID") %>% # Merge back to df_ACA, & adding "Fam_Type" variable to df_ACA
+  mutate(
+    Fam_Type = factor(Fam_Type, # Convert to factor for regression later on
+                      levels = c("Couple With Children", "Couple Without Children", 
+                                 "Single Parent Household", "Other Family Types")
+    )
+  )
+
+# (2) Add in education attainment categorization variable
+df_ACA <- df_ACA %>%
+  mutate(
+    Edu = as.numeric(Edu), # Convert to numeric
+    Edu_Group = factor(
+      case_when(
+        is.na(Edu) ~ NA_character_, # Preserve NA values
+        Edu <= 11 ~ "Less than High School",
+        Edu <= 15 ~ "Some High School",
+        Edu <= 17 ~ "High School Graduate",
+        Edu <= 20 ~ "Some College",
+        Edu <= 24 ~ "Bachelor and Higher"
+      ),
+      levels = c("Less than High School", "Some High School", "High School Graduate", 
+                 "Some College", "Bachelor and Higher")
+    )
+  )
+
+unique(df_ACA$Edu_Group) # Checking
+
+# (3) Add in employment status categorization variable
+df_ACA <- df_ACA %>%
+  mutate(
+    Employ_Group = factor(
+      case_when(
+        Employ %in% c(1, 2, 4, 5) ~ 'Employed',
+        Employ == 3 ~ 'Unemployed',
+        Employ == 6 ~ 'Not in Labor Force'
+      ),
+      levels = c("Employed", "Unemployed", "Not in Labor Force")
+    )
+  )
+
+# (4) Convert PUMA variable to factor
+df_ACA <- df_ACA %>%
+  mutate(PUMA = factor(PUMA))
+
+# (5) Recode sex & race variables back to 1/0 binary indicators
+df_ACA <- df_ACA %>%
+  mutate(Female = ifelse(Female == "Female", 1, 0),
+         White = ifelse(White == "White", 1, 0))
+
+# 2. Model
+model_1 <- lm(MemSubsidy ~ HouMemInc + Age + TaxFamCt + Female + White + Fam_Type + Edu_Group + Employ_Group, data = df_ACA)
+
+model_2 <- lm(MemSubsidy ~ HouMemInc + Age + TaxFamCt + Female + White + Fam_Type + Edu_Group + Employ_Group + PUMA, data = df_ACA)
+
+stargazer(model_1, model_2, type = "text") # Generate LaTeX code for regression results
+
+```

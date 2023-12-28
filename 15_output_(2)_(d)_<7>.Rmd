@@ -1,0 +1,52 @@
+```{r employment, echo = TRUE, message = FALSE, warning = FALSE}
+
+# 7. Other characteristics (2) - Employment status
+
+# Function for summarizing employment status data
+employ_stats <- function(df, employ_col_name) {
+  # Define all employment status groupings
+  employ_levels <- c('Employed', 
+                     'Unemployed', 
+                     'Not in Labor Force', 
+                     'NA/Other')
+  
+  total <- nrow(df) # Calculate total
+  
+  # Convert employment column to a factor with predefined levels
+  df <- df %>%
+    mutate(
+      # Match employ variable codes with predefined employ status groupings
+      Employ_Group = case_when(
+        !!sym(employ_col_name) %in% c(1, 2, 4, 5) ~ 'Employed',
+        !!sym(employ_col_name) == 3 ~ 'Unemployed',
+        !!sym(employ_col_name) == 6 ~ 'Not in Labor Force',
+        TRUE ~ 'NA/Other'
+      ),
+      # Ensure order of levels & all levels are included
+      Employ_Group = factor(Employ_Group, levels = employ_levels)
+    ) 
+  
+  df <- df %>%
+    group_by(Employ_Group) %>%
+    summarise(Count = n(), .groups = "drop") %>%
+    complete(Employ_Group = employ_levels, fill = list(Count = 0)) %>%
+    mutate(
+      Count_Prop = paste(Count, "(", sprintf("%.2f%%", Count / total * 100), ")", sep = "")
+    ) %>%
+    # Arrange by order of employment levels
+    arrange(match(Employ_Group, employ_levels)) %>%  
+    # Add summary row
+    bind_rows(summarise(df, Employ_Group = "Total", 
+                        Count = total, 
+                        Count_Prop = paste(total, "(", "100.00%", ")", sep = ""))) %>%
+    select(Employ_Group, Count_Prop)
+}
+
+# Apply above function to TopFam & BottomFam data to summmarise employment status info
+TopFam_Employ <- employ_stats(TopFam, "Employ")
+knitr::kable(TopFam_Employ, format = "markdown") # Convert table as Markdown table
+
+BottomFam_Employ <- employ_stats(BottomFam, "Employ")
+knitr::kable(BottomFam_Employ, format = "markdown") # Convert table as Markdown table
+
+```

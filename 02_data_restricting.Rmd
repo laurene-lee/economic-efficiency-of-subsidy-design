@@ -1,0 +1,50 @@
+
+```{r data_restricting, echo = TRUE, message = FALSE, warning = FALSE, results = "hide"}
+
+# Tax Family
+df_ACA_Tax <- df %>%
+  group_by(ID, HouInc) %>%
+  mutate(TaxFamCt = n(), # Number of individuals in the tax family
+         HouMemInc = HouInc/TaxFamCt) %>% # Average income level per tax-family member
+  ungroup() %>%
+  filter(TaxFamCt <= 6) # Drop tax families that have more than 6 individuals
+
+# Coverage Family
+df_ACA <- df_ACA_Tax %>%
+  filter(EmpIns == 2, # Drop those with employer-sponsored insurance
+         Medicare == 2, # Drop those with Medicare
+         Age < 65, # Drop those who'd be eligible for Medicare due to age
+         TRICARE == 2, # Drop those with TRICARE
+         VA == 2, # Drop those with VA coverage
+         Medicaid == 2, # Drop those with Medicaid
+         Age >= 19 | IncPov >= 318) %>% # Drop those who'd be eligible for Medicaid
+  group_by(ID, HouInc) %>% 
+  mutate(CovFamCt = n()) %>% # Number of individuals in the coverage family
+  ungroup()
+
+```
+
+I restricted the dataset created in Analytic Step 1 to individuals who are potential consumers in the ACA Health Insurance Marketplaces.
+
+Before restricting the dataset, I carried out the following procedures:
+
+1. I grouped the individuals in the dataset into tax families by identifying those who belong to the same family (sharing the same ID), and have the same level of household income (By definition a tax family should have the same income level for all its members).
+
+2. I computed the size of each tax families and created a new variable representing this information (named “TaxFamCt”).
+
+This step was done to ensure that we retain information on the size of tax families for each applicable potential ACA consumers when the dataset is restricted to that group. This is be- cause in Analytic Step 3, I will compute federal subsidies for health insurance that potential ACA consumers would be eligible for, and these subsidies depend on the size of the tax family.
+After the above procedures, I restricted the dataset by dropping the following individuals who we assumed to not be potential ACA consumers:
+
+* Those who currently have employer-sponsored insurance coverage
+* Those who currently have Medicare or would be eligible for Medicare due to age
+* Those who currently have TRICARE
+* Those who currently have VA coverage
+* Those who currently have Medicaid
+* Those who currently don’t have any of the above, but would be eligible for Medicaid
+    * I defined this group as children under the age of 19 living in household with income under 318% federal povery line (FPL).
+    
+Once the restrictions above were completed, I created a variable representing the number of individuals in the coverage family, which is defined as the number of individuals in the tax family that are going to need ACA coverage.
+
+Since the dataset has already been restricted to the individuals in any applicable tax family that would be potential ACA consumers (thus, by definition, coverage family members), I counted the number of individuals belonging to the same tax family (belonging to the same ID and the same household income level within that same ID) to create the variable, “Cov- FamCt,” representing the number of individuals in each coverage family.
+
+Last, I dropped all observations where the tax family size, “TaxFamCt,” is larger than 6 to simply the analysis.

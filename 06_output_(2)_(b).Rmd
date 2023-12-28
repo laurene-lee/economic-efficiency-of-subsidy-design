@@ -1,0 +1,23 @@
+
+```{r subsidy_income, echo = TRUE, message = FALSE, warning = FALSE}
+
+# Binned scatterplot
+ggplot(data = df_ACA, aes(x = HouMemInc, y = MemSubsidy)) +
+  stat_summary_bin(fun = "mean", bins = 190, geom = "point", color = "blue") +
+  geom_smooth(method = "lm", color = "red") +
+  labs(title = "Binned Scatterplot of Individual Subsidy vs Income",
+       x = "Average Individual-Level Income",
+       y = "Average Individual-Level Subsidy") +
+  theme_minimal() +
+  theme(
+    # Adjust space between x-axis label and x-axis ticks
+    axis.title.x = element_text(margin = margin(t = 20, r = 0, b = 0, l = 0)),
+    # Adjust space between y-axis label and y-axis ticks
+    axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l = 0))  
+  )
+
+# Regression
+lm_IncSubsidy <- lm(MemSubsidy ~ HouMemInc, data = df_ACA)
+stargazer(lm_IncSubsidy, type = "text") # Generate LaTeX code for regression results
+
+```

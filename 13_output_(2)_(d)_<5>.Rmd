@@ -1,0 +1,56 @@
+```{r residence, echo = TRUE, message = FALSE, warning = FALSE}
+
+# 5. Where families live
+
+# (0) Creating a named vector where names are PUMA codes & values are region names
+PUMA_Names <- setNames(
+  c("Northern New Hampshire--Grafton & Coos Counties",
+    "Lakes Region--Belknap, Carroll & Merrimack (Northern) Counties",
+    "Strafford Region--Strafford, Rockingham (Northern) & Carroll (Southeastern) Counties",
+    "Central New Hampshire--Merrimack County (Central)--Concord City",
+    "Southwestern New Hampshire--Cheshire & Sullivan Counties",
+    "Hillsborough County (Western)",
+    "Outer Manchester City",
+    "Manchester City",
+    "Hillsborough County (Southeastern)--Greater Nashua City",
+    "Seacoast Region--Rockingham County (Southern)--Portsmouth City"),
+  c("00100", "00200", "00300", "00400", "00500", "00600", "00700", "00800", "00900", "01000")
+)
+
+# (1) Creating a function that tells us where families live
+summarise_PUMA <- function(data, puma_names, total_label = "Total") {
+  
+  # Group by PUMA and summarize counts
+  data_summarized <- data %>%
+    group_by(ID, HouInc) %>%
+    summarize(PUMA = first(PUMA)) %>% # Assuming all members of a family have same PUMA value
+    ungroup() %>%
+    group_by(PUMA) %>%
+    summarize(PUMA_Count = n()) %>%
+    ungroup() %>%
+    arrange(desc(PUMA_Count)) %>%
+    mutate(Region = puma_names[PUMA],
+           Proportion = round((PUMA_Count / sum(PUMA_Count)) * 100, 2),
+           # Combine PUMA_Count and Proportion into a single string
+           PUMA_Count_Prop = paste(PUMA_Count, " (", Proportion, "%)", sep = ""))
+  
+  # Calculate total sum of PUMA_Count to use in summary row
+  Total_PUMA_Ct <- sum(data_summarized$PUMA_Count)
+  
+  # Add summary row
+  data_summarized <- data_summarized %>%
+    select(Region, PUMA_Count_Prop) %>%
+    bind_rows(summarize(data_summarized, Region = total_label,
+                        PUMA_Count_Prop = paste(Total_PUMA_Ct, " (100%)", sep = "")))
+  
+}
+
+# (2) Apply function to TopFam & BottomFam to find out where they live
+
+TopFam_PUMA <- summarise_PUMA(TopFam, PUMA_Names)
+knitr::kable(TopFam_PUMA, format = "markdown") # Convert table as Markdown table
+
+BottomFam_PUMA <- summarise_PUMA(BottomFam, PUMA_Names)
+knitr::kable(BottomFam_PUMA, format = "markdown") # Convert table as Markdown table
+
+```

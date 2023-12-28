@@ -1,0 +1,94 @@
+---
+title: "Estimating a Model of Demand for Health Insurance Plans"
+author: "Laurene Lee"
+date: 
+output: github_document
+---
+
+# Introduction
+
+In this project, I perform analytic steps for a project that seeks to analyze the economic efficiency of subsidy design on the health insurance markets that were created in the US under the 2010 Affordable Care Act (ACA). Specifically, I am assisting with estimating a model of demand for health insurance plans. To estimate the model, I carry out analytic steps composed of four major steps. In the analytic steps, I generate a dataset of potential consumers on the health insurance markets through finding and cleaning the raw data. I also present descriptive facts about the data, and estimate a model that allows us to describe how subsidies depend on individual and family level characteristics. I show the specific procedures undertaken in the analytic steps that follow.
+
+(Note: I accompany the codes in the analytic steps below with brief explanations. To access the full report with complete discussions including the exposition of figures and tables, please contact the author.)
+
+# Analytic Steps (Steps 1-4)
+
+# Analytic Step 1: Setting up the data
+
+```{r child = "01_data_loading.Rmd"}
+```
+
+# Analytic Step 2: Defining the set of potential ACA consumers
+
+```{r child = "02_data_restricting.Rmd"}
+```
+
+# Analytic Step 3: Computing subsidy eligibility
+
+```{r child = "03_computing_eligibility.Rmd"}
+```
+
+# Analytic Step 4-1: Output summary statistics about the individuals & families in the data
+
+```{r child = "04_output_(1).Rmd"}
+```
+
+# Analytic Step 4-2-(a): How does the average individual-level subsidy change with age?
+
+```{r child = "05_output_(2)_(a).Rmd"}
+```
+
+# Analytic Step 4-2-(b): How does the average individual-level subsidy change with income?
+
+```{r child = "06_output_(2)_(b).Rmd"}
+```
+
+# Analytic Step 4-2-(c): How does the distribution of individual-level subsidies differ by sex and race?
+
+```{r child = "07_output_(2)_(c).Rmd"}
+```
+
+# Analytic Step 4-2-(d): Describing families with highest and lowest 10 percent of subsidy levels.
+
+```{r child = "08_output_(2)_(d).Rmd"}
+```
+
+# Analytic Step 4-2-(d)-<1>: Size of families
+
+```{r child = "09_output_(2)_(d)_<1>.Rmd"}
+```
+
+# Analytic Step 4-2-(d)-<2>: Type of families
+
+```{r child = "10_output_(2)_(d)_<2>.Rmd"}
+```
+
+# Analytic Step 4-2-(d)-<3>: Age of family members
+
+```{r child = "11_output_(2)_(d)_<3>.Rmd"}
+```
+
+# Analytic Step 4-2-(d)-<4>: Sex & racial composition of family members
+
+```{r child = "12_output_(2)_(d)_<4>.Rmd"}
+```
+
+# Analytic Step 4-2-(d)-<5>: Where families live
+
+```{r child = "13_output_(2)_(d)_<5>.Rmd"}
+```
+
+# Analytic Step 4-2-(d)-<6>: Education attainment levels of family members
+
+```{r child = "14_output_(2)_(d)_<6>.Rmd"}
+```
+
+# Analytic Step 4-2-(d)-<7>: Employment status of family members
+
+```{r child = "15_output_(2)_(d)_<7>.Rmd"}
+```
+
+# Analytic Step 4-2-(e): Estimating a regression model that would allow us to describe how subsidies depend on individual and family characteristics.
+
+```{r child = "16_output_(2)_(e).Rmd"}
+```

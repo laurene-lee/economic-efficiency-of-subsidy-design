@@ -1,0 +1,73 @@
+```{r type, echo = TRUE, message = FALSE, warning = FALSE}
+
+# 2. Type of families
+
+# To analyze type of families in TopFam, create TopFam dataset w/ all applicable 
+# household members (not just coverage members)
+TopFam_All <- TopFam %>%
+  select(ID) %>%
+  left_join(df_ACA_Tax, by = "ID")
+
+# Function for categorizing family type
+family_type <- function(HouFam_Type, Children) {
+  case_when(
+    HouFam_Type == 1 & Children == 4 ~ "Couple Without Children",
+    HouFam_Type == 1 & Children %in% 1:3 ~ "Couple With Children",
+    HouFam_Type %in% 2:3 & Children %in% 1:3 ~ "Single Parent Household",
+    TRUE ~ "Other Family Types"
+  )
+}
+
+# TopFam family type: Apply "family_type" function & summarize data
+TopFam_Type <- TopFam_All %>%
+  group_by(ID) %>%
+  summarise(
+    Fam_Type = family_type(first(HouFam_Type), first(Children)),
+    .groups = "drop"
+  ) %>%
+  count(Fam_Type) %>% # Count observations in each family type category
+  complete(Fam_Type = c("Couple With Children", 
+                        "Couple Without Children", 
+                        "Single Parent Household", 
+                        "Other Family Types"),
+           fill = list(n = 0)) %>% # Ensure any categories with 0 observations are included
+  mutate(Fam_Type = factor(Fam_Type, levels = c("Couple With Children", # Reorder rows
+                                                "Couple Without Children",
+                                                "Single Parent Household",
+                                                "Other Family Types"))) %>%
+  arrange(Fam_Type) %>%
+  rename("Family Type" = Fam_Type, Count = n)
+
+# Print the table as a Markdown table
+knitr::kable(TopFam_Type, format = "markdown")
+
+# To analyze type of families in BottomFam, create BottomFam dataset w/ all 
+# applicable household members (not just coverage members)
+BottomFam_All <- BottomFam %>%
+  select(ID) %>%
+  left_join(df_ACA_Tax, by = "ID")
+
+# BottomFam family type: Apply "family_type" function & summarize data
+BottomFam_Type <- BottomFam_All %>%
+  group_by(ID) %>%
+  summarise(
+    Fam_Type = family_type(first(HouFam_Type), first(Children)),
+    .groups = "drop"
+  ) %>%
+  count(Fam_Type) %>%
+  complete(Fam_Type = c("Couple With Children", 
+                        "Couple Without Children", 
+                        "Single Parent Household", 
+                        "Other Family Types"),
+           fill = list(n = 0)) %>% # Ensure any categories with 0 observations are included
+  mutate(Fam_Type = factor(Fam_Type, levels = c("Couple With Children", # Reorder rows
+                                                "Couple Without Children",
+                                                "Single Parent Household",
+                                                "Other Family Types"))) %>%
+  arrange(Fam_Type) %>%
+  rename("Family Type" = Fam_Type, Count = n)
+
+# Print the table as a Markdown table
+knitr::kable(BottomFam_Type, format = "markdown")
+
+```

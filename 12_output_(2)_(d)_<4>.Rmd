@@ -1,0 +1,34 @@
+```{r top_bottom_sex_race, echo = TRUE, message = FALSE, warning = FALSE}
+
+# 4. Sex & racial composition of family members
+
+# (0) Convert "Female" and "White" to numeric 
+TopFam$Female <- ifelse(TopFam$Female == "Female", 1, 0) # Top fam
+TopFam$White <- ifelse(TopFam$White == "White", 1, 0)
+
+BottomFam$Female <- ifelse(BottomFam$Female == "Female", 1, 0) # Bottom fam
+BottomFam$White <- ifelse(BottomFam$White == "White", 1, 0)
+
+# (1) Top fam stats
+Top_RS_Stats <- TopFam %>%
+  summarise(
+    Family = "TopFam", # Add column indicating family type
+    PropFemale = mean(Female, na.rm = TRUE),
+    PropWhite = mean(White, na.rm = TRUE)
+  )
+
+# (2) Bottom Fam stats
+Bottom_RS_Stats <- BottomFam %>%
+  summarise(
+    Family = "BottomFam", # Add column indicating family type
+    PropFemale = mean(Female, na.rm = TRUE),
+    PropWhite = mean(White, na.rm = TRUE)
+  )
+
+# (3) Merge TopFam & BottomFam stats
+RS_Stats <- rbind(Top_RS_Stats, Bottom_RS_Stats)
+
+# Print the table as a Markdown table
+knitr::kable(RS_Stats, format = "markdown")
+
+```
