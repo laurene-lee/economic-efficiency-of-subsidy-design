@@ -11,3 +11,4 @@ This repo is structured as follows:
 * "complete_analysis.Rmd" is the parent R Markdown document
 * "01_data_loading.Rmd" ~ "16_output_(2)_(e).Rmd" are the child R Markdown documents ran in order in the parent document
 * "complete_analysis_files/figure-gfm" contains the figures created in the codes (this does not include the tables)
+* "data" folder includes the raw and preprocessed datasets used in the project
