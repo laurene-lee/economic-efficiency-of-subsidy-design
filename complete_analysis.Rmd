@@ -1,7 +1,6 @@
 ---
 title: "Estimating a Model of Demand for Health Insurance Plans"
 author: "Laurene Lee"
-date: 
 output: github_document
 ---
 
